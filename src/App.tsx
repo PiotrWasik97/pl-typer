@@ -24,11 +24,18 @@ function App() {
     }));
   }
 
+  const filledCount = Object.values(predictions).filter(
+    (p) => p.homeGoals !== "" && p.awayGoals !== "",
+  ).length;
+
   return (
     <div style={{ maxWidth: 600, margin: "0 auto" }}>
       <h1>Typer Premier League</h1>
       <h2>Kolejka 1</h2>
       <h2>Liczba meczów: {mockMatches.length}</h2>
+      <h2>
+        Wypełnione: {filledCount} / {mockMatches.length}
+      </h2>
 
       {mockMatches.map((match) => (
         <MatchCard
