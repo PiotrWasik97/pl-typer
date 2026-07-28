@@ -1,4 +1,5 @@
 import type { Match, Prediction } from "../types";
+import { isValidGoals } from "../utils/validation";
 
 type MatchCardProps = {
   match: Match;
@@ -10,14 +11,16 @@ type MatchCardProps = {
   ) => void;
 };
 
-const inputStyle = {
-  width: 48,
-  padding: 8,
-  fontSize: 16,
-  textAlign: "center" as const,
-  border: "1px solid #d4d4d8",
-  borderRadius: 4,
-};
+function getInputStyle(hasError: boolean) {
+  return {
+    width: 48,
+    padding: 8,
+    fontSize: 16,
+    textAlign: "center" as const,
+    border: hasError ? "2px solid #dc2626" : "1px solid #d4d4d8",
+    borderRadius: 4,
+  };
+}
 
 function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
   const kickoff = new Date(match.utcDate).toLocaleString("pl-PL", {
@@ -27,6 +30,11 @@ function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
     hour: "2-digit",
     minute: "2-digit",
   });
+
+  const homeError =
+    prediction.homeGoals !== "" && !isValidGoals(prediction.homeGoals);
+  const awayError =
+    prediction.awayGoals !== "" && !isValidGoals(prediction.awayGoals);
 
   return (
     <div
@@ -55,7 +63,7 @@ function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
           type="number"
           min={0}
           max={20}
-          style={inputStyle}
+          style={getInputStyle(homeError)}
           value={prediction.homeGoals}
           onChange={(e) =>
             onPredictionChange(match.id, "homeGoals", e.target.value)
@@ -68,7 +76,7 @@ function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
           type="number"
           min={0}
           max={20}
-          style={inputStyle}
+          style={getInputStyle(awayError)}
           value={prediction.awayGoals}
           onChange={(e) =>
             onPredictionChange(match.id, "awayGoals", e.target.value)
