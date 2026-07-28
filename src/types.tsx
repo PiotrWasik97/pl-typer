@@ -5,3 +5,8 @@ export type Match = {
   homeTeam: string;
   awayTeam: string;
 };
+
+export type Prediction = {
+  homeGoals: string;
+  awayGoals: string;
+};
