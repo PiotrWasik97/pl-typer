@@ -3,7 +3,7 @@ import type { Match } from "../types";
 export const mockMatches: Match[] = [
   {
     id: 1,
-    utcDate: "2026-08-22T14:00:00Z",
+    utcDate: "2026-07-01T18:00:00Z",
     matchday: 1,
     homeTeam: "Arsenal",
     awayTeam: "Liverpool",
