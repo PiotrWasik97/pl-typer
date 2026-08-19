@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { Session } from "@supabase/supabase-js";
 import MatchCard from "./components/MatchCard";
 import AuthForm from "./components/AuthForm";
+import Ranking from "./components/Ranking";
 import { supabase } from "./lib/supabaseClient";
 import type { Match, Prediction } from "./types";
 import { isValidGoals } from "./utils/validation";
@@ -20,6 +21,7 @@ function App() {
   const [matchesError, setMatchesError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [tab, setTab] = useState<"typy" | "ranking">("typy");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -164,53 +166,66 @@ function App() {
         <button onClick={() => supabase.auth.signOut()}>Wyloguj</button>
       </div>
 
-      <h2>Kolejka 1</h2>
-      <h2>Liczba meczów: {matches.length}</h2>
-      <h2>
-        Wypełnione: {completePredictions.length} / {matches.length}
-      </h2>
+      <div style={{ marginBottom: 16 }}>
+        <button onClick={() => setTab("typy")} disabled={tab === "typy"}>
+          Typy
+        </button>
+        <button onClick={() => setTab("ranking")} disabled={tab === "ranking"}>
+          Ranking
+        </button>
+      </div>
 
-      {matchesError && <p style={{ color: "#dc2626" }}>Błąd: {matchesError}</p>}
-      {loadingMatches && <p>Ładowanie meczów...</p>}
+      {tab === "ranking" && <Ranking />}
 
-      {matches.map((match) => (
-        <MatchCard
-          key={match.id}
-          match={match}
-          prediction={predictions[match.id] ?? EMPTY_PREDICTION}
-          onPredictionChange={handlePredictionChange}
-        />
-      ))}
+      {tab === "typy" && (
+        <>
+          <h2>Kolejka 1</h2>
+          <h2>Liczba meczów: {matches.length}</h2>
+          <h2>
+            Wypełnione: {completePredictions.length} / {matches.length}
+          </h2>
 
-      <pre style={{ background: "#e4e4e7", padding: 12, borderRadius: 8 }}>
-        {JSON.stringify(predictions, null, 2)}
-      </pre>
+          {matchesError && (
+            <p style={{ color: "#dc2626" }}>Błąd: {matchesError}</p>
+          )}
+          {loadingMatches && <p>Ładowanie meczów...</p>}
 
-      <button
-        onClick={handleSave}
-        disabled={saveDisabled}
-        style={{
-          width: "100%",
-          padding: 12,
-          fontSize: 16,
-          fontWeight: 600,
-          marginTop: 8,
-          borderRadius: 8,
-          border: "none",
-          background: saveDisabled ? "#a1a1aa" : "#16a34a",
-          color: "white",
-          cursor: saveDisabled ? "not-allowed" : "pointer",
-        }}
-      >
-        {saving
-          ? "Zapisywanie..."
-          : `Zapisz typy (${completePredictions.length})`}
-      </button>
+          {matches.map((match) => (
+            <MatchCard
+              key={match.id}
+              match={match}
+              prediction={predictions[match.id] ?? EMPTY_PREDICTION}
+              onPredictionChange={handlePredictionChange}
+            />
+          ))}
 
-      {saveError && (
-        <p style={{ color: "#dc2626" }}>Błąd zapisu: {saveError}</p>
+          <button
+            onClick={handleSave}
+            disabled={saveDisabled}
+            style={{
+              width: "100%",
+              padding: 12,
+              fontSize: 16,
+              fontWeight: 600,
+              marginTop: 8,
+              borderRadius: 8,
+              border: "none",
+              background: saveDisabled ? "#a1a1aa" : "#16a34a",
+              color: "white",
+              cursor: saveDisabled ? "not-allowed" : "pointer",
+            }}
+          >
+            {saving
+              ? "Zapisywanie..."
+              : `Zapisz typy (${completePredictions.length})`}
+          </button>
+
+          {saveError && (
+            <p style={{ color: "#dc2626" }}>Błąd zapisu: {saveError}</p>
+          )}
+          {savedAt && <p style={{ color: "#16a34a" }}>Zapisano o {savedAt}</p>}
+        </>
       )}
-      {savedAt && <p style={{ color: "#16a34a" }}>Zapisano o {savedAt}</p>}
     </div>
   );
 }
