@@ -4,6 +4,9 @@ export type Match = {
   matchday: number;
   homeTeam: string;
   awayTeam: string;
+  status: string;
+  homeGoals: number | null;
+  awayGoals: number | null;
 };
 
 export type Prediction = {

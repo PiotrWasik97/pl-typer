@@ -48,7 +48,7 @@ function App() {
       const { data, error } = await supabase
         .from("matches")
         .select(
-          "id, matchday, utcDate:utc_date, homeTeam:home_team, awayTeam:away_team",
+          "id, matchday, utcDate:utc_date, homeTeam:home_team, awayTeam:away_team, status, homeGoals:home_goals, awayGoals:away_goals",
         )
         .order("utc_date", { ascending: true });
 
@@ -131,8 +131,21 @@ function App() {
     setSaving(false);
   }
 
+  const unfinished = matches.filter((m) => m.status !== "FINISHED");
+
+  const currentMatchday =
+    unfinished.length > 0
+      ? Math.min(...unfinished.map((m) => m.matchday))
+      : Math.max(...matches.map((m) => m.matchday), 0);
+
+  const visibleMatches = matches.filter((m) => m.matchday === currentMatchday);
+  const visibleIds = new Set(visibleMatches.map((m) => m.id));
+
   const completePredictions = Object.entries(predictions)
-    .filter(([, p]) => isValidGoals(p.homeGoals) && isValidGoals(p.awayGoals))
+    .filter(([matchId, p]) => {
+      if (!visibleIds.has(Number(matchId))) return false;
+      return isValidGoals(p.homeGoals) && isValidGoals(p.awayGoals);
+    })
     .map(([matchId, p]) => ({
       matchId: Number(matchId),
       homeGoals: Number(p.homeGoals),
@@ -179,10 +192,10 @@ function App() {
 
       {tab === "typy" && (
         <>
-          <h2>Kolejka 1</h2>
-          <h2>Liczba meczów: {matches.length}</h2>
+          <h2>Kolejka {currentMatchday}</h2>
+          <h2>Liczba meczów: {visibleMatches.length}</h2>
           <h2>
-            Wypełnione: {completePredictions.length} / {matches.length}
+            Wypełnione: {completePredictions.length} / {visibleMatches.length}
           </h2>
 
           {matchesError && (
@@ -190,7 +203,7 @@ function App() {
           )}
           {loadingMatches && <p>Ładowanie meczów...</p>}
 
-          {matches.map((match) => (
+          {visibleMatches.map((match) => (
             <MatchCard
               key={match.id}
               match={match}
