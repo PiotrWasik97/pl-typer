@@ -2,9 +2,8 @@ import { useState, useEffect } from "react";
 import type { Session } from "@supabase/supabase-js";
 import MatchCard from "./components/MatchCard";
 import AuthForm from "./components/AuthForm";
-import { mockMatches } from "./data/mockMatches";
 import { supabase } from "./lib/supabaseClient";
-import type { Prediction } from "./types";
+import type { Match, Prediction } from "./types";
 import { isValidGoals } from "./utils/validation";
 
 const EMPTY_PREDICTION: Prediction = { homeGoals: "", awayGoals: "" };
@@ -16,6 +15,9 @@ function App() {
     {},
   );
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [matchesError, setMatchesError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -31,6 +33,32 @@ function App() {
 
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session) return;
+
+    async function loadMatches() {
+      setLoadingMatches(true);
+      setMatchesError(null);
+
+      const { data, error } = await supabase
+        .from("matches")
+        .select(
+          "id, matchday, utcDate:utc_date, homeTeam:home_team, awayTeam:away_team",
+        )
+        .order("utc_date", { ascending: true });
+
+      if (error) {
+        setMatchesError(error.message);
+      } else {
+        setMatches(data as Match[]);
+      }
+
+      setLoadingMatches(false);
+    }
+
+    loadMatches();
+  }, [session]);
 
   function handlePredictionChange(
     matchId: number,
@@ -85,12 +113,15 @@ function App() {
       </div>
 
       <h2>Kolejka 1</h2>
-      <h2>Liczba meczów: {mockMatches.length}</h2>
+      <h2>Liczba meczów: {matches.length}</h2>
       <h2>
-        Wypełnione: {completePredictions.length} / {mockMatches.length}
+        Wypełnione: {completePredictions.length} / {matches.length}
       </h2>
 
-      {mockMatches.map((match) => (
+      {matchesError && <p style={{ color: "#dc2626" }}>Błąd: {matchesError}</p>}
+      {loadingMatches && <p>Ładowanie meczów...</p>}
+
+      {matches.map((match) => (
         <MatchCard
           key={match.id}
           match={match}
