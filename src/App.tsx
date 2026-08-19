@@ -18,6 +18,8 @@ function App() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [matchesError, setMatchesError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -60,6 +62,33 @@ function App() {
     loadMatches();
   }, [session]);
 
+  useEffect(() => {
+    if (!session) return;
+
+    const userId = session.user.id;
+
+    async function loadPredictions() {
+      const { data, error } = await supabase
+        .from("predictions")
+        .select("match_id, home_goals, away_goals")
+        .eq("user_id", userId);
+
+      if (error || !data) return;
+
+      const loaded: Record<number, Prediction> = {};
+      for (const row of data) {
+        loaded[row.match_id] = {
+          homeGoals: String(row.home_goals),
+          awayGoals: String(row.away_goals),
+        };
+      }
+
+      setPredictions(loaded);
+    }
+
+    loadPredictions();
+  }, [session]);
+
   function handlePredictionChange(
     matchId: number,
     side: "homeGoals" | "awayGoals",
@@ -74,9 +103,30 @@ function App() {
     }));
   }
 
-  function handleSave() {
-    console.log("Do zapisania:", completePredictions);
-    setSavedAt(new Date().toLocaleTimeString("pl-PL"));
+  async function handleSave() {
+    if (!session) return;
+
+    setSaving(true);
+    setSaveError(null);
+
+    const rows = completePredictions.map((p) => ({
+      user_id: session.user.id,
+      match_id: p.matchId,
+      home_goals: p.homeGoals,
+      away_goals: p.awayGoals,
+    }));
+
+    const { error } = await supabase
+      .from("predictions")
+      .upsert(rows, { onConflict: "user_id,match_id" });
+
+    if (error) {
+      setSaveError(error.message);
+    } else {
+      setSavedAt(new Date().toLocaleTimeString("pl-PL"));
+    }
+
+    setSaving(false);
   }
 
   const completePredictions = Object.entries(predictions)
@@ -92,6 +142,8 @@ function App() {
       (p.homeGoals !== "" && !isValidGoals(p.homeGoals)) ||
       (p.awayGoals !== "" && !isValidGoals(p.awayGoals)),
   );
+
+  const saveDisabled = saving || completePredictions.length === 0 || hasErrors;
 
   if (loadingSession) {
     return <p>Ładowanie...</p>;
@@ -136,7 +188,7 @@ function App() {
 
       <button
         onClick={handleSave}
-        disabled={completePredictions.length === 0 || hasErrors}
+        disabled={saveDisabled}
         style={{
           width: "100%",
           padding: 12,
@@ -145,20 +197,19 @@ function App() {
           marginTop: 8,
           borderRadius: 8,
           border: "none",
-          background:
-            completePredictions.length === 0 || hasErrors
-              ? "#a1a1aa"
-              : "#16a34a",
+          background: saveDisabled ? "#a1a1aa" : "#16a34a",
           color: "white",
-          cursor:
-            completePredictions.length === 0 || hasErrors
-              ? "not-allowed"
-              : "pointer",
+          cursor: saveDisabled ? "not-allowed" : "pointer",
         }}
       >
-        Zapisz typy ({completePredictions.length})
+        {saving
+          ? "Zapisywanie..."
+          : `Zapisz typy (${completePredictions.length})`}
       </button>
 
+      {saveError && (
+        <p style={{ color: "#dc2626" }}>Błąd zapisu: {saveError}</p>
+      )}
       {savedAt && <p style={{ color: "#16a34a" }}>Zapisano o {savedAt}</p>}
     </div>
   );
