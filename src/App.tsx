@@ -161,7 +161,7 @@ function App() {
   const saveDisabled = saving || completePredictions.length === 0 || hasErrors;
 
   if (loadingSession) {
-    return <p>Ładowanie...</p>;
+    return <p className="msg-plain">Ładowanie...</p>;
   }
 
   if (!session) {
@@ -169,21 +169,33 @@ function App() {
   }
 
   return (
-    <div style={{ maxWidth: 600, margin: "0 auto" }}>
+    <div className="app">
       <h1>Typer Premier League</h1>
+      <p className="subtitle">Premier League 2026/27</p>
 
-      <div style={{ marginBottom: 16 }}>
-        <span style={{ marginRight: 12, color: "#71717a" }}>
-          {session.user.email}
-        </span>
-        <button onClick={() => supabase.auth.signOut()}>Wyloguj</button>
+      <div className="topbar">
+        <span>{session.user.email}</span>
+        <button
+          className="btn btn-ghost"
+          onClick={() => supabase.auth.signOut()}
+        >
+          Wyloguj
+        </button>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <button onClick={() => setTab("typy")} disabled={tab === "typy"}>
+      <div className="tabs">
+        <button
+          className="btn btn-tab"
+          onClick={() => setTab("typy")}
+          disabled={tab === "typy"}
+        >
           Typy
         </button>
-        <button onClick={() => setTab("ranking")} disabled={tab === "ranking"}>
+        <button
+          className="btn btn-tab"
+          onClick={() => setTab("ranking")}
+          disabled={tab === "ranking"}
+        >
           Ranking
         </button>
       </div>
@@ -192,16 +204,15 @@ function App() {
 
       {tab === "typy" && (
         <>
-          <h2>Kolejka {currentMatchday}</h2>
-          <h2>Liczba meczów: {visibleMatches.length}</h2>
-          <h2>
-            Wypełnione: {completePredictions.length} / {visibleMatches.length}
-          </h2>
+          <div className="meta">
+            <h2>Kolejka {currentMatchday}</h2>
+            <span>
+              Wypełnione {completePredictions.length} / {visibleMatches.length}
+            </span>
+          </div>
 
-          {matchesError && (
-            <p style={{ color: "#dc2626" }}>Błąd: {matchesError}</p>
-          )}
-          {loadingMatches && <p>Ładowanie meczów...</p>}
+          {matchesError && <p className="msg-error">Błąd: {matchesError}</p>}
+          {loadingMatches && <p className="msg-plain">Ładowanie meczów...</p>}
 
           {visibleMatches.map((match) => (
             <MatchCard
@@ -213,30 +224,17 @@ function App() {
           ))}
 
           <button
+            className="btn btn-primary"
             onClick={handleSave}
             disabled={saveDisabled}
-            style={{
-              width: "100%",
-              padding: 12,
-              fontSize: 16,
-              fontWeight: 600,
-              marginTop: 8,
-              borderRadius: 8,
-              border: "none",
-              background: saveDisabled ? "#a1a1aa" : "#16a34a",
-              color: "white",
-              cursor: saveDisabled ? "not-allowed" : "pointer",
-            }}
           >
             {saving
               ? "Zapisywanie..."
               : `Zapisz typy (${completePredictions.length})`}
           </button>
 
-          {saveError && (
-            <p style={{ color: "#dc2626" }}>Błąd zapisu: {saveError}</p>
-          )}
-          {savedAt && <p style={{ color: "#16a34a" }}>Zapisano o {savedAt}</p>}
+          {saveError && <p className="msg-error">Błąd zapisu: {saveError}</p>}
+          {savedAt && <p className="msg-ok">Zapisano o {savedAt}</p>}
         </>
       )}
     </div>

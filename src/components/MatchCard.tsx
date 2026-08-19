@@ -11,17 +11,6 @@ type MatchCardProps = {
   ) => void;
 };
 
-function getInputStyle(hasError: boolean) {
-  return {
-    width: 48,
-    padding: 8,
-    fontSize: 16,
-    textAlign: "center" as const,
-    border: hasError ? "2px solid #dc2626" : "1px solid #d4d4d8",
-    borderRadius: 4,
-  };
-}
-
 function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
   const matchDate = new Date(match.utcDate);
   const kickoff = matchDate.toLocaleString("pl-PL", {
@@ -33,6 +22,7 @@ function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
   });
 
   const isLocked = matchDate.getTime() < Date.now();
+  const isFinished = match.status === "FINISHED";
 
   const homeError =
     prediction.homeGoals !== "" && !isValidGoals(prediction.homeGoals);
@@ -40,59 +30,35 @@ function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
     prediction.awayGoals !== "" && !isValidGoals(prediction.awayGoals);
 
   return (
-    <div
-      style={{
-        background: "white",
-        borderRadius: 8,
-        padding: 16,
-        marginBottom: 12,
-        opacity: isLocked ? 0.6 : 1,
-      }}
-    >
-      <div style={{ fontSize: 12, color: "#71717a" }}>{kickoff}</div>
+    <div className={isLocked ? "match locked" : "match"}>
+      <div className="match-date">
+        {kickoff}
+        {isFinished && ` — ${match.homeGoals}:${match.awayGoals}`}
+      </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginTop: 8,
-        }}
-      >
-        <span style={{ flex: 1, textAlign: "right", fontWeight: 600 }}>
-          {match.homeTeam}
-        </span>
+      <div className="match-row">
+        <span className="team home">{match.homeTeam}</span>
 
         {isLocked ? (
-          <span
-            style={{
-              flex: 1,
-              textAlign: "center",
-              color: "#71717a",
-            }}
-          >
-            Typowanie zamknięte
-          </span>
+          <span className="locked-label">Typowanie zamknięte</span>
         ) : (
           <>
             <input
               type="number"
               min={0}
               max={20}
-              style={getInputStyle(homeError)}
+              className={homeError ? "score error" : "score"}
               value={prediction.homeGoals}
               onChange={(e) =>
                 onPredictionChange(match.id, "homeGoals", e.target.value)
               }
             />
-
-            <span style={{ color: "#a1a1aa" }}>:</span>
-
+            <span className="colon">:</span>
             <input
               type="number"
               min={0}
               max={20}
-              style={getInputStyle(awayError)}
+              className={awayError ? "score error" : "score"}
               value={prediction.awayGoals}
               onChange={(e) =>
                 onPredictionChange(match.id, "awayGoals", e.target.value)
@@ -101,7 +67,7 @@ function MatchCard({ match, prediction, onPredictionChange }: MatchCardProps) {
           </>
         )}
 
-        <span style={{ flex: 1, fontWeight: 600 }}>{match.awayTeam}</span>
+        <span className="team">{match.awayTeam}</span>
       </div>
     </div>
   );
