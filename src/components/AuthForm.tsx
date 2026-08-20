@@ -7,21 +7,45 @@ function AuthForm() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isRegister = mode === "register";
 
+  function switchMode() {
+    setMode(isRegister ? "login" : "register");
+    setError(null);
+    setInfo(null);
+  }
+
   async function handleSubmit() {
     setError(null);
+    setInfo(null);
+
+    if (isRegister && username.trim() === "") {
+      setError("Podaj nick");
+      return;
+    }
+
     setLoading(true);
 
     if (isRegister) {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { username } },
+        options: { data: { username: username.trim() } },
       });
-      if (error) setError(error.message);
+
+      if (error) {
+        setError(error.message);
+      } else if (!data.session) {
+        setMode("login");
+        setPassword("");
+        setUsername("");
+        setInfo(
+          "Konto założone. Potwierdź adres linkiem z maila, a potem zaloguj się.",
+        );
+      }
     } else {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -64,6 +88,7 @@ function AuthForm() {
       />
 
       {error && <p className="msg-error">{error}</p>}
+      {info && <p className="msg-ok">{info}</p>}
 
       <button
         className="btn btn-primary"
@@ -73,13 +98,7 @@ function AuthForm() {
         {loading ? "Czekaj..." : isRegister ? "Zarejestruj się" : "Zaloguj się"}
       </button>
 
-      <button
-        className="link-btn"
-        onClick={() => {
-          setMode(isRegister ? "login" : "register");
-          setError(null);
-        }}
-      >
+      <button className="link-btn" onClick={switchMode}>
         {isRegister ? "Mam już konto" : "Nie mam konta"}
       </button>
     </div>
